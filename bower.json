@@ -1,0 +1,24 @@
+{
+  "name": "panoply-timeframe",
+  "version": "0.0.0",
+  "homepage": "https://github.com/avinoamr/panoply-timeframe",
+  "authors": [
+    "Roi Avinoam <avinoamr@gmail.com>"
+  ],
+  "description": "Timeframe selection element for Polymer",
+  "keywords": [
+    "polymer",
+    "web",
+    "components",
+    "panoply",
+    "timeframe"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
