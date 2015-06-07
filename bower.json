@@ -20,5 +20,10 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "dependencies": {
+    "paper-ripple": "Polymer/paper-ripple#^0.5",
+    "polymer": "Polymer/polymer#^0.5",
+    "core-pages": "Polymer/core-pages#^0.5"
+  }
 }
