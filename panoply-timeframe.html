@@ -18,9 +18,14 @@
             padding: 5px;
             text-align: center;
         }
+
         td {
             border-left: 1px solid rgb(238, 238, 238);
             border-top: 1px solid rgb(238, 238, 238);
+        }
+        td:last-child {
+            /* separation between months */
+            border-right: 1px solid rgb(238, 238, 238);
         }
         td[future] {
             background: rgba(238, 238, 238, .6);
@@ -123,7 +128,6 @@
                 weeks.push( [ null, null, null, null, null, null, null ] )
             }
 
-
             this.weeks = weeks;
         }
     })
@@ -133,72 +137,85 @@
 <polymer-element name="panoply-timeframe" attributes="start end">
     <template>
         <style type="text/css" shim-shadowdom>
-        #arrow-back {
+        :host {
+            position: relative;
+        }
+
+        #arrow-back, #arrow-forward {
+            background: white;
             position: absolute;
             top: 0;
-            left: 0;
         }
-        #arrow-forward {
-            position: absolute;
-            top: 0;
-            right: 0;
-        }
-        [absolute] {
+        #arrow-back { left: 0 }
+        #arrow-forward { right: 0 }
+
+        .absolute {
             position: absolute;
         }
+        
         panoply-timeframe-month {
-            transition: transform .25s, opacity .25s;
-            opacity: 1;
-        }
-        panoply-timeframe-month.fade {
-            opacity: 0.3;
+            -webkit-transition: -webkit-transform .25s;
+               -moz-transition:    -moz-transform .25s;
+                -ms-transition:     -ms-transform .25s;
+                    transition:         transform .25s;
+
+            -webkit-transform: translateX( 0 );
+               -moz-transform: translateX( 0 );
+                -ms-transform: translateX( 0 );
+                    transform: translateX( 0 );
         }
         </style>
-        <div relative layout horizontal
-            on-timeframe-select="{{ select }}">
+        <div relative layout horizontal id="months"
+            style="overflow: hidden"
+            on-timeframe-select="{{ select }}"
+            on-scroll="{{ scroll }}">
 
             <template repeat="{{ month, idx in months }}">
-                <panoply-timeframe-month 
-                    relative?="{{ !month.absolute }}"
-                    absolute?="{{ month.absolute }}"
+                <panoply-timeframe-month
                     month="{{ month }}"
                     start="{{ start }}"
                     end="{{ end }}"
                     class="{{ month.class }}"
-                    style="transform: translateX( {{ month.left }}% );"
+                    style="{{ month.left | _translate }}"
                     on-transitionend="{{ transitionend }}">
                 </panoply-timeframe-month>
             </template>
-
-            <div relative id="arrow-back">
-                <core-icon icon="arrow-back"></core-icon>
-                <paper-ripple fit 
-                    class="circle recenteringTouch"
-                    on-core-transitionend="{{ back }}"></paper-ripple>
-            </div>
-            <div relative id="arrow-forward">
-                <core-icon icon="arrow-forward"></core-icon>
-                <paper-ripple fit 
-                    class="circle recenteringTouch"
-                    on-core-transitionend="{{ forward }}"></paper-ripple>
-            </div>
+        </div>
+        <div relative id="arrow-back">
+            <core-icon icon="arrow-back"></core-icon>
+            <paper-ripple fit 
+                class="circle recenteringTouch"
+                on-click="{{ back }}"></paper-ripple>
+        </div>
+        <div relative id="arrow-forward">
+            <core-icon icon="arrow-forward"></core-icon>
+            <paper-ripple fit 
+                class="circle recenteringTouch"
+                on-click="{{ forward }}"></paper-ripple>
         </div>
     </template>
     <script type="text/javascript">
     Polymer({
+        show: 2,
         ready: function () {
-            var months = [
-                // new Date( "Apr 2015" ),
-                new Date( "May 2015" ),
-                new Date( "Jun 2015" ),
-                // new Date( "Jul 2015" )
-            ];
-            months[ 0 ].visible = true;
-            months[ 0 ].left = 0;
-            months[ 1 ].visible = true;
-            months[ 1 ].left = 0;
+            var now = new Date();
+            var months = [];
+            for ( var i = 0 ; i < this.show ; i += 1 ) {
+                var month = new Date( now.getFullYear(), now.getMonth() - i );
+                month.left = 0;
+                months.unshift( month );
+            }
+
             this.months = months;
+
+            // we start by appending one absolutely-positioned month
+            // in order to identify it later when the forward button is clicked
+            // due to it's left attribute equaling -100 instead of the default
+            // zeros
+            this.append();
         },
+
+        // date selection, either starts or ends the selection
         select: function ( ev, date ) {
             console.log( "SELECT ", date )
             if ( this.start ) {
@@ -208,41 +225,58 @@
                 this.end = date;
             }
         },
+
+        // back button clicked, shift left
         forward: function () {
-            var last = this.months[ this.months.length - 1 ];
-            var month = new Date( last );
-            month.setMonth( month.getMonth() + 1 );
-
-            month.left = last.left + 100;
-            month.absolute = true;
-            // month.class = "fade";
-            this.months.push( month );
-
-            this.async( function () {
-                month.class = "";
-                // this.months[ this.months.length - 3 ].class = "fade";
-                for ( var i = 0 ; i < this.months.length ; i += 1 ) {
-                    this.months[ i ].left = ( this.months[ i ].left || 0 ) - 100
-                }
-            })
+            var last = this.months.slice( -1 )[ 0 ];
+            if ( last.left == -100 ) {
+                this.append();
+            }
+            this.async( this.shift, [ -1 ], 100 );
         },
+
+        // back button clicked, shift right
         back: function () {
             var first = this.months[ 0 ];
-            var month = new Date( first );
-            month.setMonth( month.getMonth() - 1 );
-            month.left = first.left - 100;
-            month.absolute = true;
-            // month.class = "fade";
-            this.months.unshift( month );
-
-            this.async( function () {
-                month.class = "";
-                // this.months[ 2 ].class = "fade";
-                for ( var i = 0 ; i < this.months.length ; i += 1 ) {
-                    this.months[ i ].left = ( this.months[ i ].left || 0 ) + 100
-                }
-            })
+            if ( first.left == 0 ) {
+                this.prepend();
+            }
             
+            this.async( this.shift, [ +1 ], 100 );
+        },
+
+        // appends the succeeding month to the list
+        append: function () {
+            var last = this.months.slice( -1 )[ 0 ];
+            var month = new Date( last.getFullYear(), last.getMonth() + 1 );
+            month.class = "absolute";
+            month.left = 0;
+            this.months.push( month );
+        },
+
+        // prepends the precending month to the list
+        prepend: function () {
+            var first = this.months[ 0 ];
+            var month = new Date( first.getFullYear(), first.getMonth() - 1 );
+            month.class = "absolute";
+            month.left = -100;
+            this.months.unshift( month );
+        },
+
+        // push all of the months left or right, depending on the sign
+        // of the direction argument
+        shift: function ( dir ) {
+            for ( var i = 0 ; i < this.months.length ; i += 1 ) {
+                this.months[ i ].left += dir * 100;
+            }
+        },
+        _translate: function ( v ) {
+            return [
+                "-webkit-transform: translateX(" + v + "%)",
+                   "-moz-transform: translateX(" + v + "%)",
+                    "-ms-transform: translateX(" + v + "%)",
+                        "transform: translateX(" + v + "%)",
+            ].join( "; " );
         },
     })
     </script>
