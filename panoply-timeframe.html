@@ -61,7 +61,7 @@
                         <template repeat="{{ day in week }}">
                             <td relative 
                                 future?="{{ day.future }}"
-                                inrange?="{{ day.inrange }}">
+                                inrange?="{{ day | _inRange( start, end ) }}">
                                 {{ day || "&nbsp;" }}
                                 <paper-ripple fit
                                     hidden?="{{ !day || day.future }}"
@@ -75,10 +75,6 @@
     </template>
     <script type="text/javascript">
     Polymer({
-        observe: {
-            "start": "monthChanged",
-            "end": "monthChanged",
-        },
         select: function ( ev, data, el ) {
             var day = +el.templateInstance.model.day.toString();
             var date = new Date( this.month );
@@ -100,8 +96,6 @@
             while( t.getMonth() == this.month.getMonth() ) {
                 var day = new String( t.getDate() );
                 day.future = t > now;
-                day.inrange = t >= this.start && t <= this.end;
-
                 weeks[ weeks.length - 1 ].push( day );
 
                 // starting a new week
@@ -129,12 +123,18 @@
             }
 
             this.weeks = weeks;
-        }
+        },
+        _inRange: function ( day, start, end ) {
+            if ( !day ) return false;
+            var date = new Date( this.month );
+            date.setDate( day );
+            return date >= start && date <= end;
+        },
     })
     </script>
 </polymer-element>
 
-<polymer-element name="panoply-timeframe" attributes="start end">
+<polymer-element name="panoply-timeframe" attributes="start end show disabled">
     <template>
         <style type="text/css" shim-shadowdom>
         :host {
@@ -142,6 +142,7 @@
         }
 
         #arrow-back, #arrow-forward {
+            cursor: pointer;
             background: white;
             position: absolute;
             top: 0;
@@ -152,7 +153,7 @@
         .absolute {
             position: absolute;
         }
-        
+
         panoply-timeframe-month {
             -webkit-transition: -webkit-transform .25s;
                -moz-transition:    -moz-transform .25s;
@@ -196,6 +197,7 @@
     </template>
     <script type="text/javascript">
     Polymer({
+        disabled: false,
         show: 2,
         ready: function () {
             var now = new Date();
@@ -217,11 +219,23 @@
 
         // date selection, either starts or ends the selection
         select: function ( ev, date ) {
-            console.log( "SELECT ", date )
-            if ( this.start ) {
-                this.end = date;
-            } else {
+            // if both start and end are defined, reset the selection
+            // edge case: first click is also used to define a 1-day selection
+            // in which case, start equals end and should therefor not reset
+            if ( this.start && this.end && this.start != this.end ) {
+                this.start = this.end = null;
+            }
+
+            if ( !this.start ) {
+                // new selection, default to a 1-day selection
+                this.start = this.end = date;
+            } else if ( this.start > date ) {
+                // reversed selection, set the end date before the start
+                // date
+                this.end = this.start;
                 this.start = date;
+            } else {
+                // start is already defined, select the end date
                 this.end = date;
             }
         },
