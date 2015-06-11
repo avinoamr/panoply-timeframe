@@ -2,8 +2,9 @@
 <link rel="import" href="bower_components/core-icons/core-icons.html">
 <link rel="import" href="bower_components/core-pages/core-pages.html">
 <link rel="import" href="bower_components/paper-ripple/paper-ripple.html">
+<link rel="import" href="bower_components/paper-input/paper-input.html">
 
-<polymer-element name="panoply-timeframe-month" attributes="month start end">
+<polymer-element name="panoply-timeframe-month" attributes="month start end disabled">
     <template>
         <style type="text/css">
         * {
@@ -11,7 +12,7 @@
         }
         table {
             border: 0;
-            border-bottom: 1px solid rgb(238, 238, 238);
+            border-bottom: 1px solid rgb( 238, 238, 238 );
             opacity: inherit;
         }
         th, td {
@@ -20,27 +21,34 @@
         }
 
         td {
-            border-left: 1px solid rgb(238, 238, 238);
-            border-top: 1px solid rgb(238, 238, 238);
+            border-left: 1px solid rgb( 238, 238, 238 );
+            border-top: 1px solid rgb( 238, 238, 238 );
         }
         td:last-child {
             /* separation between months */
-            border-right: 1px solid rgb(238, 238, 238);
+            border-right: 1px solid rgb( 238, 238, 238 );
         }
         td[future] {
-            background: rgba(238, 238, 238, .6);
+            background: rgba( 238, 238, 238, .6 );
             color: rgba( 0, 0, 0, .5 )
         }
         td[inrange] {
-            background: #2980b9;
+            background: rgb( 41, 128, 185 );
             color: white;
         }
         paper-ripple {
             cursor: pointer;
             color: #2980b9;
         }
+
+        .disabled td[inrange] {
+            background: rgba( 41, 128, 185,.1 );
+            color: rgba( 0, 0, 0, .5 )
+
+        }
+
         </style>
-        <table cellspacing="0" cellpadding="0">
+        <table cellspacing="0" cellpadding="0" class="{{ disabled ? 'disabled' : '' }}">
             <thead>
                 <tr>
                     <th colspan="7">{{ title }}</th>
@@ -64,7 +72,7 @@
                                 inrange?="{{ day | _inRange( start, end ) }}">
                                 {{ day || "&nbsp;" }}
                                 <paper-ripple fit
-                                    hidden?="{{ !day || day.future }}"
+                                    hidden?="{{ !day || day.future || disabled }}"
                                     on-core-transitionend="{{ select }}"></paper-ripple>
                             </td>
                         </template>
@@ -75,6 +83,7 @@
     </template>
     <script type="text/javascript">
     Polymer({
+        disabled: false,
         select: function ( ev, data, el ) {
             var day = +el.templateInstance.model.day.toString();
             var date = new Date( this.month );
@@ -134,11 +143,12 @@
     </script>
 </polymer-element>
 
-<polymer-element name="panoply-timeframe" attributes="start end show disabled">
+<polymer-element name="panoply-timeframe-calendar" attributes="start end show disabled">
     <template>
         <style type="text/css" shim-shadowdom>
         :host {
             position: relative;
+            display: block;
         }
 
         #arrow-back, #arrow-forward {
@@ -176,6 +186,7 @@
                     month="{{ month }}"
                     start="{{ start }}"
                     end="{{ end }}"
+                    disabled?="{{ disabled }}"
                     class="{{ month.class }}"
                     style="{{ month.left | _translate }}"
                     on-transitionend="{{ transitionend }}">
@@ -198,7 +209,6 @@
     <script type="text/javascript">
     Polymer({
         disabled: false,
-        show: 2,
         ready: function () {
             var now = new Date();
             var months = [];
@@ -222,7 +232,7 @@
             // if both start and end are defined, reset the selection
             // edge case: first click is also used to define a 1-day selection
             // in which case, start equals end and should therefor not reset
-            if ( this.start && this.end && this.start != this.end ) {
+            if ( this.start && this.end && this.start.getTime() != this.end.getTime() ) {
                 this.start = this.end = null;
             }
 
@@ -295,3 +305,162 @@
     })
     </script>
 </polymer-element>
+
+<polymer-element name="panoply-timeframe" attributes="start end show disabled">
+    <template>
+        <div layout horizontal>
+            <panoply-timeframe-calendar self-center
+                start="{{ start }}"
+                end="{{ end }}"
+                show="{{ show }}"
+                disabled="{{ disabled }}">
+            </panoply-timeframe-calendar>
+            <div self-center style="margin-left: 20px;">
+                <paper-input-decorator floatingLabel 
+                    id="startDate" 
+                    label="Start Date">
+                    <input is="core-input"
+                        list="{{ hasMoment ? 'auto' : '' }}"
+                        on-change="{{ datesChanged }}"
+                        on-keyup="{{ datesChanged }}"
+                        value="{{ startDate }}">
+                </paper-input-decorator>
+                <paper-input-decorator floatingLabel 
+                    id="endDate" 
+                    label="End Date">
+                    <input is="core-input" 
+                        list="{{ hasMoment ? 'auto' : '' }}"
+                        value="{{ endDate }}">
+                </paper-input-decorator>
+            </div>
+        </div>
+        <datalist id="auto">
+            <option value="Now"></option>
+            <option value="Today"></option>
+            <option value="Yesterday"></option>
+            <option value="2 days ago"></option>
+            <option value="This week"></option>
+            <option value="Last week"></option>
+            <option value="2 weeks ago"></option>
+            <option value="This month"></option>
+            <option value="Last month"></option>
+            <option value="2 months ago"></option>
+        </datalist>
+    </template>
+    <script type="text/javascript">
+    Polymer({
+        disabled: false,
+        show: 2,
+        RE_TIME_AGO: /^(\d+) +(day|week|month)s? +ago$/i,
+        RE_THIS_LAST: /^(this|last) +(day|week|month)s?$/i,
+
+        // from start to start date
+        startChanged: function ( ev ) {
+            if ( !this.start ) return;
+            this.startDate = this._fromDate( this.start );
+            this.$.startDate.updateLabelVisibility( this.startDate );
+        },
+
+        endChanged: function () {
+            if ( !this.end ) return;
+            this.endDate = this._fromDate( this.end );
+            this.$.endDate.updateLabelVisibility( this.endDate );
+        },
+
+        ready: function () {
+            this.hasMoment = typeof moment !== "undefined"
+            if ( !this.hasMoment ) {
+                console.warn( "panoply-timeframe:", "moment is undefined. relative times are disabled" );
+            }
+        },
+
+        startDateChanged: function () {
+            var date = this.startDate;
+            this.start = this._toDate( date );
+        },
+
+        endDateChanged: function () {
+            var date = this.endDate;
+            this.end = this._toDate( date );
+        },
+
+        // give a date string, returns the date object
+        // the core of this function is the implementation of relative 
+        // date strings like "today", "this week", "3 months ago"
+        // the complete list of formats is available in the 'auto' datalist
+        _toDate: function ( date ) {
+            var date = date.toString().toLowerCase().trim();
+            var units, delta, match; 
+
+            // parse the date string into a units-delta pair
+            if ( date == "now" ) {
+                date = new Date();
+            } else if ( date == "today" ) {
+                date = new Date();
+                units = "day";
+                delta = 0;
+            } else if ( date == "yesterday" ) {
+                date = new Date();
+                units = "day";
+                delta = 1;
+            } else if ( match = date.match( this.RE_THIS_LAST ) ) {
+                date = new Date();
+                units = match[ 2 ];
+                delta = match[ 1 ] == "last" ? 1 : 0;
+            } else if ( match = date.match( this.RE_TIME_AGO ) ) {
+                date = new Date();
+                delta = +match[ 1 ];
+                units = match[ 2 ].toLowerCase();
+            } else {
+                date = new Date( date );
+            }
+
+            // convert from units-delta to a date object
+            if ( units ) {
+                if ( typeof moment == "undefined" ) {
+                    date = new Date( "Invalid" );
+                } else {
+                    date = moment( date )
+                        .startOf( units )
+                        .subtract( delta, units )
+                        .toDate();
+                }
+            }
+            
+            // store the values, and return it
+            date.units = units;
+            date.delta = delta;
+
+            // console.log( date )
+            return date;
+        },
+
+        // given a date object, returns the date string
+        _fromDate: function ( date ) {
+            if ( date.units ) {
+                var units = date.units, delta = date.delta;
+                if ( delta == 0 && units == "day" ) {
+                    return "Today"
+                } else if ( delta == 0 ) {
+                    return "This " + units;
+                } else if ( delta == 1 && units == "day" ) {
+                    return "Yesterday";
+                } else if ( date.delta == 1 ) {
+                    return "Last " + units;
+                } else {
+                    return delta + " " + units + "s ago";
+                }
+            }
+
+            return [ date.getDate(), [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            ][ date.getMonth() ], date.getFullYear() ].join( " " );
+        },
+    })
+    </script>
+</polymer-element>
+
+
+
+
