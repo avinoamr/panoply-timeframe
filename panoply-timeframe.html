@@ -133,10 +133,10 @@
             this.weeks = weeks;
         },
         _inRange: function ( day, start, end ) {
-            if ( !day ) return false;
+            if ( !day || day.future ) return false;
             var date = new Date( this.month );
             date.setDate( day );
-            return date >= start && date <= end;
+            return date >= start && date < end;
         },
     })
     </script>
@@ -207,6 +207,7 @@
     </template>
     <script type="text/javascript">
     Polymer({
+        show: 2,
         disabled: false,
         ready: function () {
             var now = new Date();
@@ -231,21 +232,30 @@
             // if both start and end are defined, reset the selection
             // edge case: first click is also used to define a 1-day selection
             // in which case, start equals end and should therefor not reset
-            if ( this.start && this.end && this.start.getTime() != this.end.getTime() ) {
+            if ( this.start && this.end && !this.end.temp ) {
                 this.start = this.end = null;
             }
 
             if ( !this.start ) {
                 // new selection, default to a 1-day selection
-                this.start = this.end = date;
+                this.start = date;
+
+                var end = new Date( date );
+                end.setDate( end.getDate() + 1 )
+                end.temp = true;
+                this.end = end;
             } else if ( this.start > date ) {
                 // reversed selection, set the end date before the start
                 // date
-                this.end = this.start;
+                var end = new Date( this.start );
+                end.setDate( end.getDate() + 1 )
+                this.end = end;
                 this.start = date;
             } else {
                 // start is already defined, select the end date
-                this.end = date;
+                var end = new Date( date );
+                end.setDate( end.getDate() + 1 )
+                this.end = end;
             }
         },
 
@@ -324,7 +334,9 @@
             <div self-center style="margin-left: 20px;">
                 <paper-input-decorator floatingLabel 
                     id="startDate" 
-                    label="Start Date">
+                    label="Start Date"
+                    isInvalid?="{{ start | _isInvalid }}"
+                    error="Invalid date">
                     <input is="core-input"
                         list="{{ hasMoment ? 'auto' : '' }}"
                         on-change="{{ inputChanged }}"
@@ -333,7 +345,9 @@
                 </paper-input-decorator>
                 <paper-input-decorator floatingLabel 
                     id="endDate" 
-                    label="End Date">
+                    label="End Date"
+                    isInvalid?="{{ end | _isInvalid }}"
+                    error="Invalid date">
                     <input is="core-input" 
                         list="{{ hasMoment ? 'auto' : '' }}"
                         on-change="{{ inputChanged }}"
@@ -409,6 +423,8 @@
             // parse the date string into a units-delta pair
             if ( date == "now" ) {
                 date = new Date();
+                units = "minute";
+                delta = 0;
             } else if ( date == "today" ) {
                 date = new Date();
                 units = "day";
@@ -429,6 +445,10 @@
                 date = new Date( date );
             }
 
+            if ( delta ) {
+                delta += offset || 0;
+            }
+
             // convert from units-delta to a date object
             if ( units ) {
                 if ( typeof moment == "undefined" ) {
@@ -436,7 +456,7 @@
                 } else {
                     date = moment( date )
                         .startOf( units )
-                        .subtract( delta + ( offset || 0 ), units )
+                        .subtract( delta, units )
                         .toDate();
                 }
             }
@@ -444,8 +464,6 @@
             // store the values, and return it
             date.units = units;
             date.delta = delta;
-
-            // console.log( date )
             return date;
         },
 
@@ -471,6 +489,10 @@
                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
             ][ date.getMonth() ], date.getFullYear() ].join( " " );
         },
+
+        _isInvalid: function ( date ) {
+            return date && isNaN( date.getTime() );
+        }
     })
     </script>
 </polymer-element>
