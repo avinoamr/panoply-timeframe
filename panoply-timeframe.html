@@ -387,18 +387,11 @@
                 console.warn( "panoply-timeframe:", "moment is undefined. " +
                     "relative timeframes are disabled" );
             }
-
-            // cross-browser matches
-            if ( !this.$.startInput.matches ) {
-                this.$.startInput.matches = this.$.endInput.matches = 
-                    this.$.startInput.webkitMatchesSelector ||
-                    this.$.startInput.el.msMatchesSelector;
-            }
         },
 
         startChanged: function () {
-            // update the date input unless it's focused
-            if ( this.start && !this.$.startInput.matches( ":focus" ) ) {
+            // update the date input unless it's user-generated
+            if ( this.start && !this.start.userinput ) {
                 var date = this._fromDate( this.start );
                 if ( date ) {
                     this.startDate = date;
@@ -408,8 +401,8 @@
         },
 
         endChanged: function () {
-            // update the date input unless it's focused
-            if ( this.end && !this.$.endInput.matches( ":focus" ) ) {
+            // update the date input unless it's user-generated
+            if ( this.end && !this.end.userinput ) {
                 var date = this._fromDate( this.end );
                 if ( date ) {
                     this.endDate = date
@@ -418,17 +411,23 @@
             }
         },
 
-        inputChanged: function () {
-            this.async( this._inputChanged, null, 100 );
+        inputChanged: function ( ev, data, el ) {
+            var fn = el == this.$.startInput 
+                ? this._startInputChanged 
+                : this._endInputChanged;
+            this.async( fn, null, 100 );
         },
 
-        _inputChanged: function () {
-            if ( this.startDate ) {
-                this.start = this._toDate( this.startDate );
-            }
-            if ( this.endDate ) {
-                this.end = this._toDate( this.endDate );
-            }
+        _startInputChanged: function () {
+            var start = this._toDate( this.startDate );
+            start.userinput = true;
+            this.start = start;
+        },
+
+        _endInputChanged: function () {
+            var end = this._toDate( this.endDate );
+            end.userinput = true;
+            this.end = end;
         },
 
         // given a date string, returns the date object
