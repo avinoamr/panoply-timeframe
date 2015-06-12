@@ -42,7 +42,7 @@
         }
 
         .disabled td[inrange] {
-            background: rgba( 41, 128, 185,.1 );
+            background: rgba( 41, 128, 185, .1 );
             color: rgba( 0, 0, 0, .5 )
         }
 
@@ -309,8 +309,7 @@
     <template>
         <style type="text/css" shim-shadowdom>
         panoply-timeframe-calendar.reltime /deep/ td[inrange] {
-            background: rgba( 41, 128, 185, .1 );
-            color: rgba( 0, 0, 0, .5 )
+            background: rgba( 41, 128, 185, .7 );
         }
         </style>
         <div layout horizontal>
@@ -376,7 +375,6 @@
         },
 
         _selectionChanged: function () {
-            console.log( "SELECTION CHANGED" );
             if ( this.start ) {
                 this.startDate = this._fromDate( this.start );
                 this.$.startDate.updateLabelVisibility( this.startDate );
@@ -392,14 +390,11 @@
         },
 
         _inputChanged: function () {
-            console.log( "INPUT CHANGED" );
             if ( this.startDate ) {
-                console.log( "START", this.startDate );
                 this.start = this._toDate( this.startDate );
             }
             if ( this.endDate ) {
-                console.log( "END", this.endDate );
-                this.end = this._toDate( this.endDate );
+                this.end = this._toDate( this.endDate, -1 );
             }
         },
 
@@ -407,7 +402,7 @@
         // the core of this function is the implementation of relative 
         // date strings like "today", "this week", "3 months ago"
         // the complete list of formats is available in the 'auto' datalist
-        _toDate: function ( date ) {
+        _toDate: function ( date, offset ) {
             var date = date.toString().toLowerCase().trim();
             var units, delta, match; 
 
@@ -441,7 +436,7 @@
                 } else {
                     date = moment( date )
                         .startOf( units )
-                        .subtract( delta, units )
+                        .subtract( delta + ( offset || 0 ), units )
                         .toDate();
                 }
             }
