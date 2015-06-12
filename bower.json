@@ -1,6 +1,6 @@
 {
   "name": "panoply-timeframe",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "homepage": "https://github.com/avinoamr/panoply-timeframe",
   "authors": [
     "Roi Avinoam <avinoamr@gmail.com>"
@@ -28,6 +28,7 @@
     "paper-input": "Polymer/paper-input#^0.5"
   },
   "devDependencies": {
-    "moment": "~2.10.3"
+    "moment": "~2.10.3",
+    "paper-button": "Polymer/paper-button#^0.5"
   }
 }

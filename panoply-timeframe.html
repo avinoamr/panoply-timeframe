@@ -1,8 +1,8 @@
-<link rel="import" href="bower_components/polymer/polymer.html">
-<link rel="import" href="bower_components/core-icons/core-icons.html">
-<link rel="import" href="bower_components/core-pages/core-pages.html">
-<link rel="import" href="bower_components/paper-ripple/paper-ripple.html">
-<link rel="import" href="bower_components/paper-input/paper-input.html">
+<link rel="import" href="../polymer/polymer.html" onerror="javascript:if(typeof __demo_fix_import!='undefined')__demo_fix_import(this)">
+<link rel="import" href="../core-icons/core-icons.html">
+<link rel="import" href="../core-pages/core-pages.html">
+<link rel="import" href="../paper-ripple/paper-ripple.html">
+<link rel="import" href="../paper-input/paper-input.html">
 
 <polymer-element name="panoply-timeframe-month" attributes="month start end disabled">
     <template>
@@ -358,6 +358,7 @@
                         on-input="{{ inputChanged }}"
                         value="{{ endDate }}">
                 </paper-input-decorator>
+                <content></content>
             </div>
         </div>
         <datalist id="auto">

@@ -2,23 +2,60 @@
 <html>
     <head>
         <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
 
         <title>panoply-timeframe</title>
+        <script type="text/javascript">
+        function __demo_fix_import ( link ) {
+            // links are broken for the demo because they assume that the
+            // library is already inside the bower_components folder
+            // this hack for the demo, reconstructs the import links to their
+            // correct location
+            while ( link ) {
+                if ( link instanceof HTMLLinkElement ) {
+                    var href = link.getAttribute( "href" );
+                    if ( href.substr( 0, 3 ) == "../" ) {
+                        href = href.replace( "../", "bower_components/" )
+                        var newlink = document.createElement( "link" );
+                        newlink.setAttribute( "rel", "import" );
+                        newlink.setAttribute( "href", href );
+                        document.head.appendChild( newlink );
+                    }
+                }
+                link = link.nextSibling;
+            }
+        }
+        </script>
 
         <script type="text/javascript" src="bower_components/moment/min/moment.min.js"></script>
         <script src="bower_components/webcomponentsjs/webcomponents.js"></script>
         <link rel="import" href="bower_components/polymer/polymer.html">
+        <link rel="import" href="bower_components/paper-button/paper-button.html">
         <link rel="import" href="panoply-timeframe.html">
         <style type="text/css">
         * {
             font-family: arial, san-serif;
         }
+        a {
+            text-decoration: none;
+            color: rgb( 41, 128, 185 );
+        }
+        paper-button {
+            background: rgb( 41, 128, 185 );
+            color: white;
+        }
         </style>
     </head>
     <body fullbleed>
         <div layout horizontal around-justified fit>
-            <panoply-timeframe self-center></panoply-timeframe>
+            <panoply-timeframe self-center>
+                <div layout horizontal>
+                    <a self-center href="#">Cancel</a>
+                    <div flex></div>
+                    <paper-button self-center raised>Save</paper-button>
+                </div>
+            </panoply-timeframe>
         </div>
     </body>
 </html>
