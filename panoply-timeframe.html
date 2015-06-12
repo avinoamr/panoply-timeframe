@@ -321,26 +321,29 @@
         panoply-timeframe-calendar.reltime /deep/ td[inrange] {
             background: rgba( 41, 128, 185, .7 );
         }
+        panoply-timeframe-calendar {
+            margin-right: 20px;
+        }
         </style>
         <div layout horizontal>
             <panoply-timeframe-calendar self-center
                 class="{{ start.units || end.units ? 'reltime' : '' }}"
-                on-timeframe-select="{{ selectionChanged }}"
                 start="{{ start }}"
                 end="{{ end }}"
                 show="{{ show }}"
                 disabled="{{ disabled }}">
             </panoply-timeframe-calendar>
-            <div self-center style="margin-left: 20px;">
+            <div self-center>
                 <paper-input-decorator floatingLabel 
                     id="startDate" 
                     label="Start Date"
                     isInvalid?="{{ start | _isInvalid }}"
                     error="Invalid date">
                     <input is="core-input"
+                        id="startInput"
                         list="{{ hasMoment ? 'auto' : '' }}"
-                        on-change="{{ inputChanged }}"
                         on-input="{{ inputChanged }}"
+                        on-change="{{ inputChanged }}"
                         value="{{ startDate }}">
                 </paper-input-decorator>
                 <paper-input-decorator floatingLabel 
@@ -349,6 +352,7 @@
                     isInvalid?="{{ end | _isInvalid }}"
                     error="Invalid date">
                     <input is="core-input" 
+                        id="endInput"
                         list="{{ hasMoment ? 'auto' : '' }}"
                         on-change="{{ inputChanged }}"
                         on-input="{{ inputChanged }}"
@@ -382,20 +386,34 @@
                 console.warn( "panoply-timeframe:", "moment is undefined. " +
                     "relative timeframes are disabled" );
             }
-        },
 
-        selectionChanged: function () {
-            this.async( this._selectionChanged, null, 100 );
-        },
-
-        _selectionChanged: function () {
-            if ( this.start ) {
-                this.startDate = this._fromDate( this.start );
-                this.$.startDate.updateLabelVisibility( this.startDate );
+            // cross-browser matches
+            if ( !this.$.startInput.matches ) {
+                this.$.startInput.matches = this.$.endInput.matches = 
+                    this.$.startInput.webkitMatchesSelector ||
+                    this.$.startInput.el.msMatchesSelector;
             }
-            if ( this.end ) {
-                this.endDate = this._fromDate( this.end );
-                this.$.endDate.updateLabelVisibility( this.endDate );
+        },
+
+        startChanged: function () {
+            // update the date input unless it's focused
+            if ( this.start && !this.$.startInput.matches( ":focus" ) ) {
+                var date = this._fromDate( this.start );
+                if ( date ) {
+                    this.startDate = date;
+                    this.$.startDate.updateLabelVisibility( this.startDate );
+                }
+            }
+        },
+
+        endChanged: function () {
+            // update the date input unless it's focused
+            if ( this.end && !this.$.endInput.matches( ":focus" ) ) {
+                var date = this._fromDate( this.end );
+                if ( date ) {
+                    this.endDate = date
+                    this.$.endDate.updateLabelVisibility( this.endDate );
+                }
             }
         },
 
@@ -408,7 +426,7 @@
                 this.start = this._toDate( this.startDate );
             }
             if ( this.endDate ) {
-                this.end = this._toDate( this.endDate, -1 );
+                this.end = this._toDate( this.endDate );
             }
         },
 
@@ -416,7 +434,7 @@
         // the core of this function is the implementation of relative 
         // date strings like "today", "this week", "3 months ago"
         // the complete list of formats is available in the 'auto' datalist
-        _toDate: function ( date, offset ) {
+        _toDate: function ( date ) {
             var date = date.toString().toLowerCase().trim();
             var units, delta, match; 
 
@@ -445,10 +463,6 @@
                 date = new Date( date );
             }
 
-            if ( delta ) {
-                delta += offset || 0;
-            }
-
             // convert from units-delta to a date object
             if ( units ) {
                 if ( typeof moment == "undefined" ) {
@@ -469,15 +483,19 @@
 
         // given a date object, returns the date string
         _fromDate: function ( date ) {
+            if ( isNaN( date.getTime() ) ) return null;
             if ( date.units ) {
                 var units = date.units, delta = date.delta;
-                if ( delta == 0 && units == "day" ) {
+
+                if ( delta == 0 && units == "minute" ) {
+                    return "Now";
+                } else if ( delta === 0 && units === "day" ) {
                     return "Today"
-                } else if ( delta == 0 ) {
+                } else if ( delta === 0 ) {
                     return "This " + units;
-                } else if ( delta == 1 && units == "day" ) {
+                } else if ( delta === 1 && units === "day" ) {
                     return "Yesterday";
-                } else if ( date.delta == 1 ) {
+                } else if ( date.delta === 1 ) {
                     return "Last " + units;
                 } else {
                     return delta + " " + units + "s ago";
@@ -492,7 +510,7 @@
 
         _isInvalid: function ( date ) {
             return date && isNaN( date.getTime() );
-        }
+        },
     })
     </script>
 </polymer-element>

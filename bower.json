@@ -25,6 +25,9 @@
     "paper-ripple": "Polymer/paper-ripple#^0.5",
     "polymer": "Polymer/polymer#^0.5",
     "core-pages": "Polymer/core-pages#^0.5",
-    "paper-input": "Polymer/paper-input#^0.5",
+    "paper-input": "Polymer/paper-input#^0.5"
+  },
+  "devDependencies": {
+    "moment": "~2.10.3"
   }
 }
