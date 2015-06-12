@@ -7,23 +7,23 @@
 
         <title>panoply-timeframe</title>
         <script type="text/javascript">
-        function __demo_fix_import ( link ) {
+        function fixImports ( link ) {
             // links are broken for the demo because they assume that the
             // library is already inside the bower_components folder
             // this hack for the demo, reconstructs the import links to their
             // correct location
-            while ( link ) {
-                if ( link instanceof HTMLLinkElement ) {
-                    var href = link.getAttribute( "href" );
-                    if ( href.substr( 0, 3 ) == "../" ) {
-                        href = href.replace( "../", "bower_components/" )
-                        var newlink = document.createElement( "link" );
-                        newlink.setAttribute( "rel", "import" );
-                        newlink.setAttribute( "href", href );
-                        document.head.appendChild( newlink );
-                    }
+            var lib = document.head.querySelector( "#lib" );
+            var links = lib.import.querySelectorAll( "link" );
+            for ( var i = 0 ; i < links.length ; i += 1 ) {
+                var link = links[ i ];
+                var href = link.getAttribute( "href" );
+                if ( href.substr( 0, 3 ) == "../" ) {
+                    href = href.replace( "../", "bower_components/" )
+                    var newlink = document.createElement( "link" );
+                    newlink.setAttribute( "rel", "import" );
+                    newlink.setAttribute( "href", href );
+                    document.head.appendChild( newlink );
                 }
-                link = link.nextSibling;
             }
         }
         </script>
@@ -32,7 +32,7 @@
         <script src="bower_components/webcomponentsjs/webcomponents.js"></script>
         <link rel="import" href="bower_components/polymer/polymer.html">
         <link rel="import" href="bower_components/paper-button/paper-button.html">
-        <link rel="import" href="panoply-timeframe.html">
+        <link rel="import" href="panoply-timeframe.html" id="lib">
         <style type="text/css">
         * {
             font-family: arial, san-serif;
@@ -47,7 +47,7 @@
         }
         </style>
     </head>
-    <body fullbleed>
+    <body fullbleed onload="javascript:fixImports()">
         <div layout horizontal around-justified fit>
             <panoply-timeframe self-center>
                 <div layout horizontal>
